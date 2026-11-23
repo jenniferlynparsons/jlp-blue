@@ -1,0 +1,15 @@
+---
+import Base from '../../layouts/Base.astro';
+import NowView from '../../components/NowView.astro';
+import { getNowVersions } from '../../lib/queries';
+
+const [current, previous] = await getNowVersions();
+const description = "What I'm reading, watching, making, and into right now.";
+---
+<Base title="Now" description={description}>
+  {current ? <NowView version={current} previous={previous} /> : (
+    <main id="main" class="page-head">
+      <div><h1>Now</h1><p class="intro">Nothing here yet.</p></div>
+    </main>
+  )}
+</Base>

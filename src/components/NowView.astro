@@ -1,0 +1,97 @@
+---
+import { render } from 'astro:content';
+import Stamp from './Stamp.astro';
+import SideList from './SideList.astro';
+import SectionLabel from './SectionLabel.astro';
+import ChangeLines from './ChangeLines.astro';
+import { formatDate, isoDate } from '../lib/dates';
+import type { NowVersion } from '../lib/queries';
+
+interface Props {
+  version: NowVersion;
+  /** Set on an older version's page. */
+  current?: NowVersion;
+  /** Set on /now/ only. */
+  previous?: NowVersion;
+}
+const { version, current, previous } = Astro.props;
+const d = version.entry.data;
+const { Content } = await render(version.entry);
+const isOld = current && current.slug !== version.slug;
+---
+{isOld && (
+  <p class="notice mono">
+    This is an older Now page from <time datetime={isoDate(d.date)}>{formatDate(d.date)}</time>. <a href="/now/">See what I'm up to now →</a>
+  </p>
+)}
+<div class="page-head">
+  <div>
+    <h1>Now</h1>
+    <p class="intro">What I'm reading, watching, making, and into right now. <br>A snapshot of where I am now.</p>
+  </div>
+  <div class="updated">
+    {d.draft && <Stamp label="DRAFT" variant="dashed" tilt={0} />}
+    <Stamp label={`UPDATED ${formatDate(d.date)}`} />
+  </div>
+</div>
+
+<div class="cols">
+  <main id="main" class="main">
+    {d.quote?.text && (
+      <section class="quote">
+        <SectionLabel note="from my commonplace book" />
+        <figure>
+          <blockquote>{d.quote.text}</blockquote>
+          {(d.quote.author || d.quote.source) && (
+            <figcaption>— {d.quote.author}{d.quote.author && d.quote.source && ', '}{d.quote.source && <em>{d.quote.source}</em>}</figcaption>
+          )}
+        </figure>
+      </section>
+    )}
+    <div class="prose now"><Content /></div>
+  </main>
+  <aside class="side">
+    {d.reading.length > 0 && (
+      <SideList title="Reading" items={d.reading.map((r) => ({ title: r.title, em: true, sub: r.author, digging: r.digging, note: r.note }))} />
+    )}
+    {d.watching.length > 0 && (
+      <SideList title="Recently watched" items={d.watching.map((w) => ({ title: w.title, em: true, sub: w.kind, digging: w.digging, note: w.note }))} />
+    )}
+    {d.links.length > 0 && (
+      <SideList title="Articles & links" items={d.links.map((l) => ({ title: l.title, href: l.url, sub: l.site, note: l.note }))} />
+    )}
+  </aside>
+</div>
+
+{previous && (
+  <section>
+    <SectionLabel text="Previous version" />
+    <div class="row">
+      <time datetime={isoDate(previous.entry.data.date)}>{formatDate(previous.entry.data.date)}</time>
+      <div>
+        <ChangeLines lines={previous.changes} isFirst={previous.isFirst} />
+        <a class="more" href={`/now/${previous.slug}/`}>read that version →</a>
+      </div>
+    </div>
+    <p class="all"><a class="mono" href="/now/archive/">all past versions →</a></p>
+  </section>
+)}
+
+<style>
+  .notice { font-size: 14px; padding: 12px 16px; background: var(--tint); border: 1.5px dashed var(--ink); }
+  .updated { padding-bottom: 6px; display: flex; flex-direction: row; align-items: center; gap: 8px; }
+  .quote { display: flex; flex-direction: column; gap: 16px; }
+  figure { display: flex; flex-direction: column; gap: 12px; padding: 8px 0 8px 28px; border-left: 3px solid var(--ink); }
+  blockquote { font-size: 30px; line-height: 1.35; font-style: italic; }
+  figcaption { font-family: var(--mono); font-size: 14px; color: var(--muted); }
+  .all { padding-top: 16px; font-size: 14px; }
+  @media (max-width: 600px) { blockquote { font-size: 24px; } }
+
+  /* Each ### item reads as a small post with a divider below it. */
+  .now { gap: 8px; }
+  .now :global(h2:not(:first-child)) { margin-top: 32px; }
+  .now :global(h3) { font-size: 26px; margin-top: 0; padding-top: 20px; }
+  .now :global(:not(h2) + h3) { border-top: 1px solid var(--rule-light); }
+  .now :global(p) { font-size: 19px; line-height: 1.6; }
+  .now :global(> :last-child), .now :global(> :has(+ h2)) { padding-bottom: 20px; border-bottom: 1px solid var(--rule-light); }
+</style>

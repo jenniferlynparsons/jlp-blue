@@ -1,0 +1,18 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import NowView from '../../components/NowView.astro';
+import { formatDate } from '../../lib/dates';
+import { getNowVersions, type NowVersion } from '../../lib/queries';
+
+export const getStaticPaths = (async () => {
+  const versions = await getNowVersions();
+  return versions.map((version) => ({ params: { date: version.slug }, props: { version, current: versions[0] } }));
+}) satisfies GetStaticPaths;
+
+interface Props { version: NowVersion; current: NowVersion; }
+const { version, current } = Astro.props;
+---
+<Base title={`Now, ${formatDate(version.entry.data.date)}`} description={`My Now page as of ${formatDate(version.entry.data.date)}.`}>
+  <NowView version={version} current={current} />
+</Base>

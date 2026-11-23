@@ -1,0 +1,21 @@
+---
+interface Props { lines: string[]; isFirst: boolean; }
+const { lines, isFirst } = Astro.props;
+
+const SYMBOLS: Record<string, string> = { '+': 'added', '−': 'removed', '-': 'removed', '~': 'changed', '✓': 'finished' };
+const parse = (line: string) => {
+  const sym = line[0];
+  return SYMBOLS[sym] && line[1] === ' '
+    ? { sym: sym === '-' ? '−' : sym, aria: SYMBOLS[sym], text: line.slice(2) }
+    : { text: line };
+};
+---
+{lines.length === 0
+  ? <span class="serif">{isFirst ? 'First version.' : 'No changes listed.'}</span>
+  : lines.map(parse).map((l) => (
+      <span>{l.sym && <><span class="sym" role="img" aria-label={l.aria}>{l.sym}</span>{' '}</>}{l.text}</span>
+    ))}
+
+<style>
+  .sym { font-weight: 600; }
+</style>

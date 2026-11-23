@@ -1,0 +1,39 @@
+---
+import Base from '../../layouts/Base.astro';
+import ChangeLines from '../../components/ChangeLines.astro';
+import SectionLabel from '../../components/SectionLabel.astro';
+import { formatDate, isoDate } from '../../lib/dates';
+import { getNowVersions } from '../../lib/queries';
+
+const versions = await getNowVersions();
+const years = Map.groupBy(versions, (v) => v.entry.data.date.getUTCFullYear());
+---
+<Base title="Now archive" description="Every version of my Now page, newest first, with what changed each time.">
+  <div class="page-head">
+    <div>
+      <h1>Now archive</h1>
+      <p class="intro">Every version of my <a href="/now/">Now page</a>, newest first, with what changed each time.</p>
+    </div>
+  </div>
+  <main id="main" class="archive">
+    {versions.length === 0 && <p>Nothing here yet.</p>}
+    {[...years].map(([year, vs]) => (
+      <section>
+        <SectionLabel text={String(year)} />
+        {vs.map((v) => (
+          <div class="row">
+            <time datetime={isoDate(v.entry.data.date)}>{formatDate(v.entry.data.date)}</time>
+            <div>
+              {v === versions[0] ? <span class="serif">Current version.</span> : <ChangeLines lines={v.changes} isFirst={v.isFirst} />}
+              <a class="more" href={`/now/${v.slug}/`}>read this version →</a>
+            </div>
+          </div>
+        ))}
+      </section>
+    ))}
+  </main>
+</Base>
+
+<style>
+  .archive { display: flex; flex-direction: column; gap: 36px; max-width: 860px; }
+</style>
