@@ -1,0 +1,36 @@
+---
+const links = [
+  { href: '/', label: 'Log' },
+  { href: '/now/', label: 'Now' },
+  { href: '/projects/', label: 'Projects' },
+  { href: '/about/', label: 'About' },
+];
+const path = Astro.url.pathname;
+// Log owns / and /log/*; the others own their prefix.
+const isCurrent = (href: string) =>
+  href === '/' ? path === '/' || path.startsWith('/log/') : path.startsWith(href);
+---
+<header>
+  <div class="brand">
+    <a class="wordmark" href="/">jlp.blue</a>
+    <span>worklog of Jennifer Lyn Parsons</span>
+  </div>
+  <nav aria-label="Main">
+    {links.map((l) => (
+      <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
+    ))}
+  </nav>
+</header>
+
+<style>
+  header {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 16px;
+    border-bottom: 2px solid var(--ink); padding-bottom: 16px; font-family: var(--mono);
+  }
+  .brand { display: flex; flex-direction: column; gap: 4px; }
+  .brand span { font-size: 13px; color: var(--muted); }
+  .wordmark { font-size: 30px; font-weight: 600; text-decoration: none; letter-spacing: -0.02em; }
+  nav { display: flex; flex-wrap: wrap; gap: 0 24px; font-size: 15px; }
+  nav a { display: inline-flex; align-items: center; min-height: 44px; }
+  nav a[aria-current='page'] { font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+</style>
