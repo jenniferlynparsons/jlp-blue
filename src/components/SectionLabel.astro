@@ -1,0 +1,8 @@
+---
+interface Props { text?: string; note?: string; level?: 'h2' | 'h3' | 'div'; }
+const { text, note, level: Tag = 'h2' } = Astro.props;
+---
+<div class="label">
+  {text && <Tag>{text}</Tag>}
+  {note && <span class="note">{note}</span>}
+</div>

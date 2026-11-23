@@ -1,0 +1,39 @@
+---
+import Stamp from './Stamp.astro';
+import { formatDate, isoDate } from '../lib/dates';
+import type { FeedItem } from '../lib/queries';
+
+interface Props { item: FeedItem; }
+const { item } = Astro.props;
+const TILT = { built: -2, made: 1.5, wrote: 0, note: -1, now: 1 } as const;
+const site = item.link && new URL(item.link).hostname.replace(/^www\./, '');
+---
+<article id={item.id}>
+  <time datetime={isoDate(item.date)}>{formatDate(item.date)}</time>
+  <div class="body">
+    <div class="head">
+      <Stamp value={item.type} tilt={TILT[item.type]} small />
+      {item.draft && <Stamp label="DRAFT" variant="dashed" small tilt={0} />}
+      <h3>{item.href ? <a href={item.href}>{item.title}</a> : item.title}</h3>
+    </div>
+    <p>
+      {item.summary}
+      {site && ' '}
+      {site && (item.href === item.link
+        ? <span class="site">→ {site}</span>
+        : <a class="site" href={item.link}>→ {site}</a>)}
+    </p>
+  </div>
+</article>
+
+<style>
+  article { display: flex; gap: 24px; padding: 20px 0; border-bottom: 1px solid var(--rule-light); }
+  time { flex: 0 0 96px; font-family: var(--mono); font-size: 13px; color: var(--muted); padding-top: 4px; }
+  .body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  h3 { font-size: 22px; font-weight: 600; line-height: 1.3; }
+  p { font-size: 18px; line-height: 1.5; }
+  .site { font-family: var(--mono); font-size: 14px; color: var(--muted); }
+  a.site { color: var(--ink); }
+  @media (max-width: 480px) { article { flex-direction: column; gap: 6px; } time { flex-basis: auto; } }
+</style>

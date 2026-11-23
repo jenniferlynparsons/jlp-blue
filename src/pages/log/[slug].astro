@@ -1,0 +1,61 @@
+---
+// One route for both /log/2/, /log/3/… (list pages) and /log/<entry>/ (entries with a body).
+// Entry ids look like 2026-11-23-name, so they never collide with page numbers.
+import type { GetStaticPaths } from 'astro';
+import { render, type CollectionEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import LogList from '../../components/LogList.astro';
+import Stamp from '../../components/Stamp.astro';
+import { formatDate, isoDate } from '../../lib/dates';
+import { getFeed, hasBody, published, PAGE_SIZE } from '../../lib/queries';
+
+export const getStaticPaths = (async () => {
+  const pages = Math.ceil((await getFeed()).length / PAGE_SIZE);
+  const projectIds = new Set((await published('projects')).map((p) => p.id));
+  const listPages = Array.from({ length: Math.max(0, pages - 1) }, (_, i) => ({
+    params: { slug: String(i + 2) },
+    props: { page: i + 2 },
+  }));
+  const entries = (await published('log')).filter((e) => hasBody(e.body)).map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry, projectId: entry.data.project && projectIds.has(entry.data.project.id) ? entry.data.project.id : undefined },
+  }));
+  return [...listPages, ...entries];
+}) satisfies GetStaticPaths;
+
+type Props = { page: number } | { entry: CollectionEntry<'log'>; projectId?: string };
+const props = Astro.props as Props;
+const entry = 'entry' in props ? props.entry : undefined;
+const { Content } = entry ? await render(entry) : { Content: null };
+---
+{'page' in props ? (
+  <Base title={`Log, page ${props.page}`} description="Older entries from my worklog.">
+    <LogList page={props.page} />
+  </Base>
+) : entry && Content && (
+  <Base title={entry.data.title} description={entry.data.summary} type="article">
+    <main id="main" class="entry">
+      <a class="mono back" href="/">← the log</a>
+      <div class="meta">
+        <time class="mono muted" datetime={isoDate(entry.data.date)}>{formatDate(entry.data.date)}</time>
+        <Stamp value={entry.data.type} small />
+        {entry.data.draft && <Stamp label="DRAFT" variant="dashed" small tilt={0} />}
+      </div>
+      <h1>{entry.data.title}</h1>
+      <p class="intro">{entry.data.summary}</p>
+      <div class="prose"><Content /></div>
+      <p class="links mono">
+        <a href="/">← back to the log</a>
+        {props.projectId && <a href={`/projects/${props.projectId}/`}>the project →</a>}
+        {entry.data.link && <a href={entry.data.link}>{new URL(entry.data.link).hostname} →</a>}
+      </p>
+    </main>
+  </Base>
+)}
+
+<style>
+  .entry { display: flex; flex-direction: column; gap: 18px; max-width: 760px; }
+  .back, .links { font-size: 14px; }
+  .meta { display: flex; gap: 12px; align-items: center; font-size: 13px; }
+  .links { display: flex; flex-wrap: wrap; gap: 24px; padding-top: 20px; border-top: 1px solid var(--rule-light); }
+</style>

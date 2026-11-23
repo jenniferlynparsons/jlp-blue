@@ -1,0 +1,51 @@
+---
+import LogEntry from './LogEntry.astro';
+import NowCard from './NowCard.astro';
+import SideList from './SideList.astro';
+import SectionLabel from './SectionLabel.astro';
+import Stamp from './Stamp.astro';
+import { getFeed, getProjects, PAGE_SIZE } from '../lib/queries';
+
+interface Props { page: number; }
+const { page } = Astro.props;
+const feed = await getFeed();
+const pages = Math.max(1, Math.ceil(feed.length / PAGE_SIZE));
+const items = feed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+const href = (n: number) => (n === 1 ? '/' : `/log/${n}/`);
+const projects = (await getProjects()).slice(0, 5);
+---
+<h1 class="lede">A running record of what I'm building, writing, reading, and publishing.</h1>
+<div class="cols">
+  <main id="main" class="main">
+    <section>
+      <SectionLabel text="Log" note={page > 1 ? `page ${page} of ${pages}` : undefined} />
+      {items.map((item) => <LogEntry item={item} />)}
+      {items.length === 0 && <p class="empty">Nothing here yet.</p>}
+      <nav class="pager" aria-label="Log pages">
+        {page > 1 && <a href={href(page - 1)}>newer entries ↑</a>}
+        {page < pages && <a href={href(page + 1)}>older entries ↓</a>}
+      </nav>
+    </section>
+  </main>
+  <aside class="side">
+    <NowCard />
+    {projects.length > 0 && (
+      <SideList title="Projects" plain more={{ href: '/projects/', text: 'all projects →' }}>
+        {projects.map((p) => (
+          <div class="proj">
+            <a href={`/projects/${p.id}/`}>{p.data.title}</a>
+            <Stamp value={p.data.status} small tilt={0} />
+          </div>
+        ))}
+      </SideList>
+    )}
+  </aside>
+</div>
+
+<style>
+  .lede { font-size: 32px; font-weight: 400; line-height: 1.25; max-width: 760px; }
+  @media (max-width: 600px) { .lede { font-size: 26px; } }
+  .empty { padding: 20px 0; }
+  .pager { display: flex; gap: 24px; padding-top: 20px; font-family: var(--mono); font-size: 14px; }
+  .proj { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 17px; }
+</style>

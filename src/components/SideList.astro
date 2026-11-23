@@ -1,0 +1,46 @@
+---
+import Stamp from './Stamp.astro';
+
+export interface SideItem {
+  title: string;
+  href?: string;
+  sub?: string;
+  digging?: boolean;
+  note?: string;
+  /** Italicize the title (books, films). */
+  em?: boolean;
+}
+
+interface Props {
+  title: string;
+  items?: SideItem[];
+  more?: { href: string; text: string };
+  /** Label style instead of a card. */
+  plain?: boolean;
+}
+const { title, items = [], more, plain = false } = Astro.props;
+---
+<section class:list={[plain ? 'plain' : 'card']}>
+  <h2 class:list={[plain ? 'label' : 'card-title']}>{title}</h2>
+  <slot>
+    {items.map((i) => (
+      <div class="item">
+        <span class="title">
+          {i.href ? <a href={i.href}>{i.em ? <em>{i.title}</em> : i.title}</a> : i.em ? <em>{i.title}</em> : i.title}
+          {i.digging && <> <Stamp label="DIGGING IT" small tilt={-3} /></>}
+        </span>
+        {i.sub && <span class="sub">{i.sub}</span>}
+        {i.note && <span class="note">{i.note}</span>}
+      </div>
+    ))}
+  </slot>
+  {more && <a class="more" href={more.href}>{more.text}</a>}
+</section>
+
+<style>
+  .plain { display: flex; flex-direction: column; gap: 12px; }
+  .item { display: flex; flex-direction: column; gap: 3px; }
+  .title { font-size: 18px; line-height: 1.35; }
+  .sub { font-size: 15px; color: var(--muted); }
+  .note { font-size: 15px; line-height: 1.4; font-style: italic; }
+</style>
