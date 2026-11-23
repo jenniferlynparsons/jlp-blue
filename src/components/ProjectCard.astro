@@ -1,0 +1,43 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Stamp from './Stamp.astro';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  /** Published projects by id, for related names. */
+  byId: Map<string, CollectionEntry<'projects'>>;
+}
+const { project, byId } = Astro.props;
+const p = project.data;
+const related = (p.related ?? []).map((r) => byId.get(r.id)).filter((r) => r !== undefined);
+---
+<article class:list={['pcard', { idea: p.status === 'idea' }]} data-kind={p.kind} data-status={p.status}>
+  <div class="top">
+    <span class="kind">{p.kind}</span>
+    <span class="stamps">
+      {p.draft && <Stamp label="DRAFT" variant="dashed" small tilt={0} />}
+      <Stamp value={p.status} small tilt={0} />
+    </span>
+  </div>
+  <h3><a href={`/projects/${project.id}/`}>{p.title}</a></h3>
+  <p>{p.summary}</p>
+  <span class="meta">
+    {p.kind === 'code' && <>{p.platform}{p.platform && p.live && ' · '}{p.live && <a href={p.live}>open it →</a>}</>}
+    {p.kind === 'making' && p.materials?.join(', ')}
+    {(p.kind === 'archiving' || p.kind === 'writing') && related.map((r, i) => (
+      <>{i === 0 && (r.data.kind === 'code' ? 'tooling: ' : 'related: ')}{i > 0 && ', '}<a href={`/projects/${r.id}/`}>{r.data.title}</a></>
+    ))}
+  </span>
+</article>
+
+<style>
+  .pcard { background: var(--card); border: 1.5px solid var(--ink); padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .pcard.idea { border-style: dashed; }
+  .top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .stamps { display: flex; gap: 6px; }
+  .kind { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  h3 { font-size: 23px; font-weight: 600; line-height: 1.25; }
+  p { font-size: 17px; line-height: 1.5; }
+  .meta { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-top: auto; }
+  .meta:empty { display: none; }
+</style>

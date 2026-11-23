@@ -1,0 +1,83 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import FilterBar from '../../components/FilterBar.astro';
+import Stamp from '../../components/Stamp.astro';
+import { byStatusThenUpdated, getProjects } from '../../lib/queries';
+import { formatDate, formatMonth } from '../../lib/dates';
+
+const all = await getProjects();
+const byId = new Map(all.map((p) => [p.id, p]));
+const [latest, ...rest] = all;
+rest.sort(byStatusThenUpdated);
+const l = latest?.data;
+const nextUp = l?.roadmap?.find((r) => !r.done)?.item;
+const intro = "Things I'm making: software tools, physical things, and long-haul organizing projects. Each one says why it exists, where it stands, and what's next.";
+---
+<Base title="Projects" description={intro}>
+  <div class="page-head">
+    <div>
+      <h1>Projects</h1>
+      <p class="intro">{intro}</p>
+    </div>
+  </div>
+
+  <main id="main" class="list">
+    <FilterBar />
+
+    {latest && l && (
+      <article class="card latest" data-kind={l.kind} data-status={l.status}>
+        <div class="story">
+          <span class="mono muted small-label">LATEST · TOUCHED {formatDate(l.updated)}</span>
+          <div class="title">
+            <h2><a href={`/projects/${latest.id}/`}>{l.title}</a></h2>
+            <Stamp value={l.status} />
+            <Stamp value={l.kind} tilt={1.5} />
+            {l.draft && <Stamp label="DRAFT" variant="dashed" tilt={0} />}
+          </div>
+          <p class="problem">{l.problem ?? l.summary}</p>
+          {nextUp && (
+            <div class="next">
+              <span class="mono muted small-label">NEXT UP</span>
+              <span>{nextUp}</span>
+            </div>
+          )}
+          <a class="mono" href={`/projects/${latest.id}/`}>read the whole story →</a>
+        </div>
+        {(l.stack?.length || l.platform || l.materials?.length || l.started || l.repo || l.live) && <dl class="mono">
+          {l.stack?.length ? <><dt>stack</dt><dd>{l.stack.join(' · ')}</dd></> : null}
+          {l.platform && <><dt>runs on</dt><dd>{l.platform}</dd></>}
+          {l.materials?.length ? <><dt>materials</dt><dd>{l.materials.join(', ')}</dd></> : null}
+          {l.started && <><dt>started</dt><dd>{formatMonth(l.started)}</dd></>}
+          {l.repo && <><dt>repo</dt><dd><a href={l.repo}>github →</a></dd></>}
+          {l.live && <><dt>live</dt><dd><a href={l.live}>open it →</a></dd></>}
+        </dl>}
+      </article>
+    )}
+
+    <div class="grid">
+      {rest.map((p) => <ProjectCard project={p} byId={byId} />)}
+    </div>
+    <p data-empty hidden={all.length > 0}>Nothing here yet.</p>
+  </main>
+</Base>
+
+<style>
+  .list { display: flex; flex-direction: column; gap: 36px; }
+  .latest { flex-direction: row; flex-wrap: wrap; gap: 40px; padding: 32px; }
+  .story { flex: 999 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+  .small-label { font-size: 12px; letter-spacing: 0.12em; }
+  .next .small-label { font-size: 11px; }
+  .title { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  h2 { font-size: 34px; font-weight: 600; line-height: 1.15; }
+  .problem { font-size: 19px; line-height: 1.55; }
+  .next { display: flex; flex-direction: column; gap: 6px; font-size: 18px; }
+  .story > a { font-size: 14px; }
+  dl {
+    flex: 1 1 240px; min-width: 0; display: grid; grid-template-columns: auto 1fr; gap: 12px 16px;
+    align-content: start; font-size: 13px; border-left: 1px dashed var(--rule); padding-left: 24px;
+  }
+  dt { color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 20px; }
+  @media (max-width: 600px) { .latest { padding: 24px; } }
+</style>

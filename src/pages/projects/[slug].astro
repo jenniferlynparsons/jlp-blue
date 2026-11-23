@@ -1,0 +1,111 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { render, type CollectionEntry } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Stamp from '../../components/Stamp.astro';
+import SectionLabel from '../../components/SectionLabel.astro';
+import { formatDate, formatMonth, isoDate } from '../../lib/dates';
+import { words } from '../../lib/labels';
+import { getFeed, getProjects } from '../../lib/queries';
+
+export const getStaticPaths = (async () => {
+  const all = await getProjects();
+  return all.map((project) => ({ params: { slug: project.id }, props: { project, all } }));
+}) satisfies GetStaticPaths;
+
+interface Props { project: CollectionEntry<'projects'>; all: CollectionEntry<'projects'>[]; }
+const { project, all } = Astro.props;
+const p = project.data;
+const { Content } = await render(project);
+const log = (await getFeed()).filter((i) => i.project === project.id);
+const related = (p.related ?? []).map((r) => all.find((x) => x.id === r.id)).filter((x) => x !== undefined);
+const making = p.kind === 'making';
+const meta: [string, string | undefined][] = making
+  ? [['kind', p.kind], ['status', words(p.status)], ['made', p.started && formatMonth(p.started)], ['materials', p.materials?.join(', ')], ['tools', p.tools?.join(', ')]]
+  : [['kind', p.kind], ['status', words(p.status)], ['stack', p.stack?.join(' · ')], ['runs on', p.platform], ['started', p.started && formatMonth(p.started)], ['touched', formatDate(p.updated)]];
+---
+<Base title={p.title} description={p.summary} type="article">
+  <div class="head">
+    <a class="mono back" href="/projects/">← all projects</a>
+    <div class="title">
+      <h1>{p.title}</h1>
+      <Stamp value={p.status} />
+      <Stamp value={p.kind} tilt={1.5} />
+      {p.draft && <Stamp label="DRAFT" variant="dashed" tilt={0} />}
+    </div>
+    <p class="intro">{p.summary}</p>
+  </div>
+
+  <div class="cols">
+    <main id="main" class="main">
+      {p.problem && (
+        <section class="stack">
+          <SectionLabel text={making ? 'Why I made them' : 'The problem'} />
+          <p class="problem">{p.problem}</p>
+        </section>
+      )}
+      <div class="prose"><Content /></div>
+      {log.length > 0 && (
+        <section>
+          <SectionLabel text="In the log" />
+          {log.map((i) => (
+            <div class="row">
+              <time datetime={isoDate(i.date)}>{formatDate(i.date)}</time>
+              <div><span class="serif">{i.summary} {i.href && i.href !== `/projects/${project.id}/` && <a href={i.href} aria-label={`Read: ${i.title}`}>→</a>}</span></div>
+            </div>
+          ))}
+        </section>
+      )}
+    </main>
+
+    <aside class="side">
+      <section class="card">
+        <dl class="mono">
+          {meta.filter(([, v]) => v).map(([k, v]) => <><dt>{k}</dt><dd>{v}</dd></>)}
+        </dl>
+        {p.repo && <a class="btn filled" href={p.repo}>source on GitHub</a>}
+        {p.live && <a class="btn" href={p.live}>open it →</a>}
+      </section>
+      {p.roadmap && p.roadmap.length > 0 && (
+        <section class="card">
+          <h2 class="card-title">Roadmap</h2>
+          <ul class="roadmap">
+            {p.roadmap.map((r) => (
+              <li>
+                <span class="mono" aria-hidden="true">{r.done ? '[x]' : '[ ]'}</span>
+                {r.done ? <span><s>{r.item}</s><span class="sr">(done)</span></span> : <span>{r.item}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {related.length > 0 && (
+        <section class="card">
+          <h2 class="card-title">Related</h2>
+          {related.map((r) => <a class="rel" href={`/projects/${r.id}/`}>{r.data.title}</a>)}
+        </section>
+      )}
+    </aside>
+  </div>
+</Base>
+
+<style>
+  .head { display: flex; flex-direction: column; gap: 14px; }
+  .back { font-size: 14px; }
+  .title { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+  .intro { max-width: 700px; }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+  .problem { font-size: 21px; line-height: 1.6; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 12px 16px; font-size: 13px; }
+  dt { color: var(--muted); }
+  .btn {
+    font-family: var(--mono); font-size: 14px; display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; border: 1.5px solid var(--ink); text-decoration: none;
+  }
+  .btn.filled { background: var(--ink); color: #fff; }
+  .btn.filled:hover { background: var(--ink-dark); }
+  .roadmap { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .roadmap li { display: flex; gap: 10px; font-size: 18px; }
+  .rel { font-size: 18px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+</style>

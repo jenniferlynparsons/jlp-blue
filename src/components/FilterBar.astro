@@ -1,0 +1,54 @@
+---
+const rows = [
+  { name: 'kind', label: 'Filter by kind', options: [['', 'All kinds'], ['code', 'Code'], ['making', 'Making'], ['archiving', 'Archiving'], ['writing', 'Writing']] },
+  { name: 'status', label: 'Filter by status', options: [['', 'Any status'], ['in-progress', 'In progress'], ['in-use', 'In use'], ['done', 'Done'], ['idea', 'Idea'], ['parked', 'Parked']] },
+];
+---
+<!-- Hidden until the script runs, so no-JS visitors just see every card. -->
+<div class="filters" hidden data-filters>
+  {rows.map((r) => (
+    <div role="group" aria-label={r.label} data-row={r.name}>
+      {r.options.map(([value, text]) => (
+        <button type="button" data-value={value} aria-pressed={value === '' ? 'true' : 'false'}>{text}</button>
+      ))}
+    </div>
+  ))}
+</div>
+
+<script>
+  const bar = document.querySelector<HTMLElement>('[data-filters]');
+  if (bar) {
+    const cards = document.querySelectorAll<HTMLElement>('[data-kind][data-status]');
+    const empty = document.querySelector<HTMLElement>('[data-empty]');
+    const chosen: Record<string, string> = { kind: '', status: '' };
+    const apply = () => {
+      let shown = 0;
+      cards.forEach((c) => {
+        const ok = (!chosen.kind || c.dataset.kind === chosen.kind) && (!chosen.status || c.dataset.status === chosen.status);
+        c.hidden = !ok;
+        if (ok) shown++;
+      });
+      if (empty) empty.hidden = shown > 0;
+    };
+    bar.querySelectorAll<HTMLElement>('[data-row]').forEach((row) => {
+      row.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest('button');
+        if (!btn) return;
+        row.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+        chosen[row.dataset.row!] = btn.dataset.value ?? '';
+        apply();
+      });
+    });
+    bar.hidden = false;
+  }
+</script>
+
+<style>
+  .filters { display: flex; flex-direction: column; gap: 12px; }
+  [role='group'] { display: flex; flex-wrap: wrap; gap: 8px; }
+  button {
+    font-family: var(--mono); font-size: 13px; min-height: 44px; padding: 0 16px; cursor: pointer;
+    border: 1.5px solid var(--ink); background: var(--card); color: var(--ink);
+  }
+  button[aria-pressed='true'] { background: var(--ink); color: #fff; }
+</style>
