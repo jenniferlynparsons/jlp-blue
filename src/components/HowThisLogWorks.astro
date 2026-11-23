@@ -1,0 +1,34 @@
+---
+import SectionLabel from './SectionLabel.astro';
+
+const rows = [
+  { title: 'Projects', desc: 'things I make: tools, crafts, collections', href: '/projects/', link: 'Projects' },
+  { title: 'Blog posts', desc: 'essays and notes', href: 'https://pixelpaperyarn.rocks', link: 'pixelpaperyarn.rocks' },
+  { title: 'Guides', desc: 'reference material I share', href: 'https://www.woolgathering.xyz', link: 'woolgathering.xyz' },
+  { title: 'Author news', desc: 'books, stories, events', href: 'https://jenniferlynparsons.com', link: 'jenniferlynparsons.com' },
+  { title: 'Now updates', desc: 'written here', href: '/now/', link: 'Now' },
+];
+---
+<section id="how">
+  <SectionLabel text="How this log works" />
+  <p>Most of what I make lives somewhere else. This log collects it in one place, newest first. When something new shows up in one of these places, it gets an entry here:</p>
+  <dl>
+    {rows.map((r) => (
+      <div>
+        <dt>{r.title}</dt>
+        <dd>{r.desc}</dd>
+        <dd class="mono"><a href={r.href}>{r.link}</a></dd>
+      </div>
+    ))}
+  </dl>
+  <p>The site is built with Astro and hosted on Netlify. I built it with Claude, the same way I build the software tools on the <a href="/projects/">Projects</a> page.</p>
+</section>
+
+<style>
+  section { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 24px; }
+  p { font-size: 19px; line-height: 1.6; }
+  dl > div { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 14px 0; border-bottom: 1px solid var(--rule-light); }
+  dt { flex: 0 0 200px; font-size: 19px; font-weight: 600; }
+  dd { flex: 1 1 240px; font-size: 18px; line-height: 1.5; }
+  dd.mono { flex: 0 0 auto; font-size: 13px; padding-top: 4px; }
+</style>

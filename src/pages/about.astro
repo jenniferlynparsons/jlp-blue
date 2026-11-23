@@ -1,0 +1,44 @@
+---
+import { getEntry, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import HowThisLogWorks from '../components/HowThisLogWorks.astro';
+
+const about = await getEntry('pages', 'about');
+if (!about) throw new Error('src/content/pages/about.md is missing');
+const { Content } = await render(about);
+
+const social = [
+  { name: 'Bluesky', href: 'https://bsky.app/profile/pixelpaperyarn.bsky.social' },
+  { name: 'Mastodon', href: 'https://masto.hackers.town/@pixelpaperyarn' },
+  { name: 'Tumblr', href: 'https://pixelpaperyarn.tumblr.com/' },
+  { name: 'Instagram', href: 'https://www.instagram.com/pixelpaperyarn/' },
+];
+---
+<Base title={about.data.title} description={about.data.intro}>
+  <div class="page-head">
+    <div>
+      <h1>{about.data.title}</h1>
+      <p class="intro">{about.data.intro}</p>
+    </div>
+  </div>
+  <div class="cols">
+    <main id="main" class="main">
+      <div class="prose bio"><Content /></div>
+      <HowThisLogWorks />
+    </main>
+    <aside class="side">
+      <section class="card hello">
+        <h2 class="card-title">Say hello</h2>
+        {social.map((s) => <a href={s.href}>{s.name}</a>)}
+        <a class="more" href="https://paladin.space">everything else: paladin.space →</a>
+      </section>
+    </aside>
+  </div>
+</Base>
+
+<style>
+  .bio { font-size: 21px; gap: 20px; }
+  .hello { gap: 12px; }
+  .hello a { font-size: 18px; }
+  .hello a.more { font-size: 13px; padding-top: 4px; }
+</style>
